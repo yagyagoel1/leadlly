@@ -6,12 +6,13 @@ import { asyncHandler } from "../util/asyncHandler";
 const generateAccessAndRefreshToken = async (userId:mongoose.Types.ObjectId) => {
     try {
       const user = await User.findById(userId);
-  
+      if(!user)
+      throw new ApiError(400,"some error occurred while fetching user")
       const accessToken = await user.generateAccessToken();
-  
       const refreshToken = await user.generateRefreshToken();
-  
+      
       user.refreshToken = refreshToken;
+      user.accessToken = accessToken;
       await user.save({ validateBeforeSave: false });
   
       return {
@@ -80,4 +81,36 @@ const login = asyncHandler(async(req,res)=>{
     
     const {accessToken,refreshToken} = await generateAccessAndRefreshToken(user._id)
 
+    const options ={
+        httpOnly :true,
+        secure :true
+    }
+    return res
+    .status(200)
+    .cookie("accessToken",accessToken)
+    .cookie("refreshToken",refreshToken)
+    .json(new ApiResponse(200,{accessToken,refreshToken},"user logged in successfully"))
 })
+
+const logout = asyncHandler(async(req,res)=>{
+    await User.findByIdAndUpdate(
+        req.user._id,
+        {
+          $unset: {
+            refreshToken: 1,
+            accessToken :1,
+          },
+        },
+        {
+          new: true,
+        }
+      );
+      return res
+    .status(200)
+    .clearCookie("accessToken")
+    .clearCookie("refreshToken")
+    .json(new ApiResponse(200, {}, "user logged out"));
+})
+
+export {login,
+register}
