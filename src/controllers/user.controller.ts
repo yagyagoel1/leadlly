@@ -134,5 +134,17 @@ const editUser = asyncHandler(async(req:Request,res)=>{
         .status(200)
         .json(new ApiResponse(200, user ||{}, "Account details are updated"));
     });
+    const changeCurrentPassword = asyncHandler(async (req, res) => {
+      
+    });
+    const refreshAccessToken= asyncHandler(async(req,res)=>{
+      
+    })
 export {login,
-register}
+register,
+logout,
+editUser,
+changeCurrentPassword,
+refreshAccessToken
+
+}
