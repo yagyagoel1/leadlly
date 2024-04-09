@@ -111,6 +111,24 @@ const logout = asyncHandler(async(req,res)=>{
     .clearCookie("refreshToken")
     .json(new ApiResponse(200, {}, "user logged out"));
 })
+const editUser = asyncHandler(async(req,res)=>{
+    const {username,fullName} = req.body();
+    if(!(username||fullName))
+    throw new ApiError(400,"username or password is required")
 
+    const user = await User.findByIdAndUpdate(
+        req.user?._id,
+        {
+          $set: {
+            fullName,
+            username,
+          },
+        },
+        { new: true }
+      ).select("-password");
+      return res
+        .status(200)
+        .json(new ApiResponse(200, user, "Account details are updated"));
+    });
 export {login,
 register}
