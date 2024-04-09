@@ -11,7 +11,7 @@ import { Request, Response, NextFunction } from 'express';
       }
     }
   }
-const auth  = asyncHandler(async(req:Request,res:Response,next:NextFunction)=>{
+export const auth  = asyncHandler(async(req:Request,res:Response,next:NextFunction)=>{
    
     try {
         let token =req.cookies?.accessToken|| req.header("Authorization")?.replace("Bearer ","")
