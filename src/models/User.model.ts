@@ -37,6 +37,10 @@ const userSchema = new Schema({
     accessToken : {
         type : String,
         trim : true
+    },
+    verified : {
+        type : Boolean,
+        default:false
     }
 },{timestamps:true})
 

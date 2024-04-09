@@ -6,6 +6,8 @@ import { generateAccessToken, generateRefreshToken } from "../util/generateToken
 import { Request } from "express";
 import bcrypt from "bcrypt"
 import jwt from "jsonwebtoken";
+import { mailOptionsType, sendOTP } from "../util/sendOTP";
+import { OTP } from "../models/OTP.model";
 
 
 const generateAccessAndRefreshToken = async (userId:mongoose.Types.ObjectId) => {
@@ -60,9 +62,19 @@ const register = asyncHandler(async(req,res)=>{
       if (!createdUser) {
         throw new ApiError(500, "Soomething went wrong while registering the user");
     }
+    const otpDetails:mailOptionsType = {
+      id : createdUser._id,
+      email : createdUser.email||"",
+      subject : "Email verification ",
+      message : "Verify your email with code Below",
+      duration : 1,
+
+  }
+  await sendOTP(otpDetails);
+  
     return res
     .status(201)
-    .json(new ApiResponse(200,createdUser,"User registered successfully"))
+    .json(new ApiResponse(200,createdUser,"User registered successfully otp send successfully"))
 
 })
 
@@ -78,6 +90,9 @@ const login = asyncHandler(async(req,res)=>{
     });
     if(!user)
     throw new ApiError(400,"user doesnt exist")
+    
+    if(!user.verified)
+    throw new ApiError(400,"user is not verified")
     const isValidPassword =await bcrypt.compare(password, user?.password||"");
     
 
@@ -194,11 +209,55 @@ const editUser = asyncHandler(async(req:Request,res)=>{
         throw new ApiError(401, error.message || "invalid token ");
       }
     })
+    const verifyOTP  = asyncHandler(async(req,res)=>{
+      try {
+          const {email,otp} =req.body();
+          if(!(email&&otp))
+          {
+              throw new ApiError(400,"provide values for email otp");
+          }
+  
+  
+          //ennsume otp record exists
+          const matchedOTPRecord = await OTP.findOne({email});
+          if(!matchedOTPRecord)
+          {
+              throw new ApiError(400,"wrong email or otp");
+          }
+          
+          const expiresAt = matchedOTPRecord.expiresAt||0
+          //checking for expired code
+          if(expiresAt<Date.now())
+          {
+              await OTP.deleteOne({email});
+              throw Error("code  has expired request for a new one ");
+          }
+          //nott yet expired verify value
+          const hashedOTP=matchedOTPRecord.otp;
+          const validOTP= await bcrypt.compare(otp,hashedOTP);
+          if(!validOTP)
+          throw new ApiError(400,"code is incorrect")
+        else
+        {
+          await OTP.deleteOne({email})
+            await User.updateOne({email},
+            {
+              verified :true
+            })
+            return res
+            .status(200)
+            .json(new ApiResponse(201,{email},"user verified successfully"))
+        }
+      } catch (error:any) {
+          throw new ApiError(400,error.message||"wrong email or otp");
+      } 
+  })
 export {login,
 register,
 logout,
 editUser,
 changeCurrentPassword,
-refreshAccessToken
+refreshAccessToken,
+verifyOTP
 
 }

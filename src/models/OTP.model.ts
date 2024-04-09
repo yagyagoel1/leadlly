@@ -1,15 +1,21 @@
 import mongoose, { Schema } from "mongoose";
-
+import bcrypt from "bcrypt"
 const OTPSchema  = new Schema({
     otp:{
         type:String,
-        createdAt:Date,
-        expiresAt:Date,
+        required:true,
+    },
         owner : {
             type: mongoose.Types.ObjectId,
             ref:"User"
-        }
-    }
+        },
+        createdAt:Number,
+        expiresAt:Number
+
+})
+OTPSchema.pre("save" , async function(next){
+    this.otp = await bcrypt.hash(this.otp,process.env.SALT_ROUNDS ||10)
+    next()
 })
 export const OTP = mongoose.model("OTP",OTPSchema)
 
