@@ -2,14 +2,18 @@ import mongoose from "mongoose";
 import { User } from "../models/User.model";
 import { ApiError } from "../util/ApiError";
 import { asyncHandler } from "../util/asyncHandler";
+import { generateAccessToken, generateRefreshToken } from "../util/generateTokens";
+import { Request } from "express";
+import bcrypt from "bcrypt"
+
 
 const generateAccessAndRefreshToken = async (userId:mongoose.Types.ObjectId) => {
     try {
-      const user = await User.findById(userId);
+      const user= await User.findById(userId).select("-password");
       if(!user)
       throw new ApiError(400,"some error occurred while fetching user")
-      const accessToken = await user.generateAccessToken();
-      const refreshToken = await user.generateRefreshToken();
+      const accessToken = await generateAccessToken(user._id,user.email||"",user.username||"",user.fullName||"");
+      const refreshToken = await generateRefreshToken(user._id);
       
       user.refreshToken = refreshToken;
       user.accessToken = accessToken;
@@ -73,8 +77,8 @@ const login = asyncHandler(async(req,res)=>{
     });
     if(!user)
     throw new ApiError(400,"user doesnt exist")
-
-    const isValidPassword = await user.isPasswordCorrect(password)
+    const isValidPassword =await bcrypt.compare(password, user?.password||"");
+    
 
     if(!isValidPassword)
     throw new ApiError(400,"not a valid password")
@@ -92,9 +96,9 @@ const login = asyncHandler(async(req,res)=>{
     .json(new ApiResponse(200,{accessToken,refreshToken},"user logged in successfully"))
 })
 
-const logout = asyncHandler(async(req,res)=>{
+const logout = asyncHandler(async(req:Request,res)=>{
     await User.findByIdAndUpdate(
-        req.user._id,
+        req.user?._id ,
         {
           $unset: {
             refreshToken: 1,
@@ -111,7 +115,7 @@ const logout = asyncHandler(async(req,res)=>{
     .clearCookie("refreshToken")
     .json(new ApiResponse(200, {}, "user logged out"));
 })
-const editUser = asyncHandler(async(req,res)=>{
+const editUser = asyncHandler(async(req:Request,res)=>{
     const {username,fullName} = req.body();
     if(!(username||fullName))
     throw new ApiError(400,"username or password is required")
@@ -125,10 +129,10 @@ const editUser = asyncHandler(async(req,res)=>{
           },
         },
         { new: true }
-      ).select("-password");
+      ).select("-password -accessToken -refreshToken");
       return res
         .status(200)
-        .json(new ApiResponse(200, user, "Account details are updated"));
+        .json(new ApiResponse(200, user ||{}, "Account details are updated"));
     });
 export {login,
 register}
