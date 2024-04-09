@@ -11,3 +11,5 @@ router.route("/edit-user").patch(auth, editUser)
 router.route("/change-password").patch(auth, changeCurrentPassword)
 router.route("/refresh-token").patch(auth,refreshAccessToken)
 router.route("/verify").post(verifyOTP)
+
+export default router
