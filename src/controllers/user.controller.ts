@@ -5,6 +5,7 @@ import { asyncHandler } from "../util/asyncHandler";
 import { generateAccessToken, generateRefreshToken } from "../util/generateTokens";
 import { Request } from "express";
 import bcrypt from "bcrypt"
+import jwt from "jsonwebtoken";
 
 
 const generateAccessAndRefreshToken = async (userId:mongoose.Types.ObjectId) => {
@@ -135,10 +136,63 @@ const editUser = asyncHandler(async(req:Request,res)=>{
         .json(new ApiResponse(200, user ||{}, "Account details are updated"));
     });
     const changeCurrentPassword = asyncHandler(async (req, res) => {
-      
+      const { oldPassword, newPassword } = req.body;
+      const user = await User.findById(req.user?._id).select("-accessToken -refreshToken");
+      if(!user)
+      throw new ApiError(400,"user does not exist")
+      const isPasswordCorrect = await bcrypt.compare(oldPassword,user?.password||"")
+
+      if (!isPasswordCorrect) 
+      throw new ApiError(400, "Invalid old password");
+      user.password = newPassword;
+      await user.save({ validateBeforeSave: false });
+      return res
+        .status(200)
+        .json(new ApiResponse(200, {}, "password changed successfully"));
     });
     const refreshAccessToken= asyncHandler(async(req,res)=>{
-      
+      try {
+        const incomingRefreshToken =
+          req.cookies.refreshToken || req.body.refreshToken;
+        if (!incomingRefreshToken) {
+          throw new ApiError(401, "unauthorized request");
+        }
+    
+        const decodedToken = await jwt.verify(
+          incomingRefreshToken,
+          process.env.REFRESH_TOKEN_SECRET||""
+        );
+        if(typeof decodedToken==="string")
+        throw new ApiError(401,"invalid token")
+        const user = await User.findById(decodedToken?._id);
+        if (!user) {
+          throw new ApiError(401, "Invalid refresh token ");
+        }
+        if (incomingRefreshToken != user.refreshToken) {
+          throw new ApiError(401, "refresh token is expired or used");
+        }
+        const options = {
+          httpOnly: true,
+          secure: true,
+        };
+        const { accessToken, refreshToken } = await generateAccessAndRefreshToken(
+          user._id
+        );
+    
+        return res
+          .status(200)
+          .cookie("accessToken", accessToken, options)
+          .cookie("refreshToken", refreshToken, options)
+          .json(
+            new ApiResponse(
+              200,
+              { accessToken, refreshToken },
+              "access token refreshed"
+            )
+          );
+      } catch (error:any) {
+        throw new ApiError(401, error.message || "invalid token ");
+      }
     })
 export {login,
 register,
