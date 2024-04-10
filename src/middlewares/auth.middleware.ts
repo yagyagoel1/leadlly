@@ -22,9 +22,10 @@ export const auth  = asyncHandler(async(req:Request,res:Response,next:NextFuncti
         const decodedToken =await jwt.verify(token,process.env.ACCESS_TOKEN_SECRET||"")
         if (typeof decodedToken === 'string') {
 
-            throw new ApiError(401, "Invalid or missing refresh token"); 
+            throw new ApiError(401, "Invalid or missing access token"); 
         }
-        const user = await User.findById(decodedToken?._id).select("-password -accessToken")
+        const user = await User.findById(decodedToken?._id).select("-password -refreshToken")
+        
         if(user?.accessToken!=token)
         {
             throw new ApiError(400, "user not authorized")

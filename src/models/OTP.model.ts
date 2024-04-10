@@ -9,6 +9,11 @@ const OTPSchema  = new Schema({
             type: mongoose.Types.ObjectId,
             ref:"User"
         },
+        email: {
+            type: String,
+            required : true,
+            trim : true
+        },
         createdAt:Number,
         expiresAt:Number
 
