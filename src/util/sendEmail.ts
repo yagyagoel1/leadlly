@@ -1,46 +1,37 @@
-import nodemailer from "nodemailer"
+import dotenv from "dotenv";
 import { ApiError } from "./ApiError";
-//creating transporter
-let transporter = nodemailer.createTransport({
-    service: "gmail",
-    host : "smtp.gmail.com",
-    port : 587,
-    secure:false,
-    auth : {
-        user : process.env.AUTH_EMAIL,
-        pass : process.env.AUTH_PASS,
-    },
-});
-
-
-//verifiying transporter
-transporter.verify((error,success)=>{
-   
+import nodemailer from "nodemailer"
+let trans = nodemailer.createTransport(
+    {
+        service: 'gmail',
+        host : "smtp.gmail.com",
+        auth: {
+            user: 'yagyamail1@gmail.com',
+            pass: process.env.AUTH_PASS
+        }
+    }
+);
+trans.verify((error,success)=>{
     if(error)
     {
-        console.log(error.message)
-        throw new ApiError(500,"there was some problem with the trasnsporter mail")
+        throw new ApiError(500,"there was some issue while sending mail ")
     }
     else{
         console.log("ready for messages");
-        console.log(success);
+        console.log("success: ",success);
     }
 
 })
-export const sendEmail = async (mailOptions: {
-    from: string | undefined;
+export const sendEmail = async(mailOptions: {
     to: string;
     subject: string;
     html: string;
-}) => {
-    return new Promise((resolve, reject) => {
-        transporter.sendMail({...mailOptions}, (error, info) => {
-            if (error) {
-                reject(error);
-            } else {
-                console.log("resolved")
-                resolve(info);
-            }
-        });
-    });
-};
+})=>{
+    
+  try {
+    return await trans.sendMail({...mailOptions});
+  } catch (error) {
+    throw new ApiError(500,"there was some issue while sending mail ")
+  }
+
+}

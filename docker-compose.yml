@@ -1,0 +1,19 @@
+services:
+  mongodb:
+    image: "mongo"
+    container_name: "mongodb"
+    ports: 
+      - 27017:27017
+    volumes:
+      - mongodb_data:/data/db
+  backend:
+    build: .
+    container_name: "leadlly_assign"
+    depends_on:
+      - mongodb
+    ports:
+      - 8000:8000
+    environment:
+      DB_URL: mongodb://mongodb:27017/
+volumes:
+  mongodb_data:
