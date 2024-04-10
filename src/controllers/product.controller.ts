@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { Product } from "../models/Product.model";
 import { ApiError } from "../util/ApiError";
 import { asyncHandler } from "../util/asyncHandler";
+import { uploadOnCloudinary } from "../util/cloudinary";
 
 
 
