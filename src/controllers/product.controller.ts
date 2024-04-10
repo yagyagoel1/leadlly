@@ -5,8 +5,6 @@ import { asyncHandler } from "../util/asyncHandler";
 import { uploadOnCloudinary } from "../util/cloudinary";
 
 
-
-
 const createProduct = asyncHandler(async(req:Request,res:Response)=>{
     const {name ,description} = req.body();
     if(!name||!description)
@@ -16,7 +14,8 @@ const createProduct = asyncHandler(async(req:Request,res:Response)=>{
     const productExists =await Product.findOne({name})
     if(productExists)
     throw new ApiError(400,"Product already exists")
-    const photoLocalPath = req.files?.photo.path;
+
+    const photoLocalPath = req.file?.path||"";
     if(!photoLocalPath)
     throw new ApiError(400, "photo of the product files is required");
     const photo = await uploadOnCloudinary(photoLocalPath)
@@ -53,4 +52,5 @@ const getProducts = asyncHandler(async(req:Request,res:Response)=>{
     .json(new ApiResponse(200,products,"sent product successfully"))
 })
 
-export {createProduct}
+export {createProduct,
+getProducts}
