@@ -26,6 +26,7 @@ export const sendOTP =async ({id,
             This code expires in ${duration} hour(s)</b></p>`,
         }
         const info =await sendEmail(mailOptions);
+
         if(!info)
         throw new ApiError(500,"there was some error while sending mail")
         //save otp record

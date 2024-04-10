@@ -2,7 +2,10 @@ import nodemailer from "nodemailer"
 import { ApiError } from "./ApiError";
 //creating transporter
 let transporter = nodemailer.createTransport({
-    host : "smtp-mail.outlook.com",
+    service: "gmail",
+    host : "smtp.gmail.com",
+    port : 587,
+    secure:false,
     auth : {
         user : process.env.AUTH_EMAIL,
         pass : process.env.AUTH_PASS,
@@ -15,6 +18,7 @@ transporter.verify((error,success)=>{
    
     if(error)
     {
+        console.log(error.message)
         throw new ApiError(500,"there was some problem with the trasnsporter mail")
     }
     else{
@@ -29,10 +33,14 @@ export const sendEmail = async (mailOptions: {
     subject: string;
     html: string;
 }) => {
-    try {
-        const info = await transporter.sendMail(mailOptions);
-        return info;
-    } catch (error) {
-        throw new ApiError(500,"there was some issue while sending the mail")
-    }
+    return new Promise((resolve, reject) => {
+        transporter.sendMail({...mailOptions}, (error, info) => {
+            if (error) {
+                reject(error);
+            } else {
+                console.log("resolved")
+                resolve(info);
+            }
+        });
+    });
 };

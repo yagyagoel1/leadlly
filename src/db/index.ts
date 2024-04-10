@@ -3,7 +3,7 @@ import { DB_Name } from "../constraints"
 
  const connectDB =async ()=>{
    try {
-    const connectionString = await mongoose.connect(`${process.env.DB_URL}/${DB_Name}`)
+    const connectionString = await mongoose.connect(`${process.env.DB_URL}${DB_Name}`)
     console.log(`Database is connected to:${connectionString.connection.host}`)
 
    } catch (error) {

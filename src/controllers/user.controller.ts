@@ -8,6 +8,7 @@ import bcrypt from "bcrypt"
 import jwt from "jsonwebtoken";
 import { mailOptionsType, sendOTP } from "../util/sendOTP";
 import { OTP } from "../models/OTP.model";
+import { ApiResponse } from "../util/ApiResponse";
 
 
 const generateAccessAndRefreshToken = async (userId:mongoose.Types.ObjectId) => {
@@ -35,7 +36,7 @@ const generateAccessAndRefreshToken = async (userId:mongoose.Types.ObjectId) => 
   };
 
 const register = asyncHandler(async(req:Request,res:Response)=>{
-    const {email,username,password,fullName} = req.body();
+    const {email,username,password,fullName} = req.body;
     if (
         [email, username, password].some((feild) => feild?.trim() === "")
       ) {
@@ -70,8 +71,9 @@ const register = asyncHandler(async(req:Request,res:Response)=>{
       duration : 1,
 
   }
-  await sendOTP(otpDetails);
-  
+  const mail = await sendOTP(otpDetails);
+  if(!mail)
+  throw new ApiError(400,"mail not sent")
     return res
     .status(201)
     .json(new ApiResponse(200,createdUser,"User registered successfully otp send successfully"))
@@ -79,7 +81,7 @@ const register = asyncHandler(async(req:Request,res:Response)=>{
 })
 
 const login = asyncHandler(async(req:Request,res:Response)=>{
-    const {email,password,username}  =req.body();
+    const {email,password,username}  =req.body;
     if(!(email||username))
     {
         throw new ApiError(400,"email or username is required")
@@ -132,7 +134,7 @@ const logout = asyncHandler(async(req:Request,res:Response)=>{
     .json(new ApiResponse(200, {}, "user logged out"));
 })
 const editUser = asyncHandler(async(req:Request,res:Response)=>{
-    const {username,fullName} = req.body();
+    const {username,fullName} = req.body;
     if(!(username||fullName))
     throw new ApiError(400,"username or password is required")
 
@@ -211,7 +213,7 @@ const editUser = asyncHandler(async(req:Request,res:Response)=>{
     })
     const verifyOTP  = asyncHandler(async(req:Request,res:Response)=>{
       try {
-          const {email,otp} =req.body();
+          const {email,otp} =req.body;
           if(!(email&&otp))
           {
               throw new ApiError(400,"provide values for email otp");
