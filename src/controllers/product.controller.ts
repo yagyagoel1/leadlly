@@ -7,7 +7,7 @@ import { ApiResponse } from "../util/ApiResponse";
 
 
 const createProduct = asyncHandler(async(req:Request,res:Response)=>{
-    const {name ,description} = req.body();
+    const {name ,description} = req.body;
     if(!name||!description)
     {
         throw new ApiError(400,"name and description are required")
