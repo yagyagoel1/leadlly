@@ -9,8 +9,7 @@ import jwt from "jsonwebtoken";
 import { mailOptionsType, sendOTP } from "../util/sendOTP";
 import { OTP } from "../models/OTP.model";
 import { ApiResponse } from "../util/ApiResponse";
-
-
+import { emailSchema, nameSchema, otpSchema, passwordSchema, usernameSchema } from "../util/zodSchema";
 const generateAccessAndRefreshToken = async (userId:mongoose.Types.ObjectId) => {
     try {
       const user= await User.findById(userId).select("-password");
@@ -42,6 +41,12 @@ const register = asyncHandler(async(req:Request,res:Response)=>{
       ) {
         throw new ApiError(400, "All feilds are required");
       }
+       const validEmail = emailSchema.safeParse(email)
+       const validUsername = usernameSchema.safeParse(username)
+
+       const validPassword = passwordSchema.safeParse(password)
+       if(!(validEmail&&validPassword&&validUsername))
+       throw new ApiError(400,"enter valid inputs")
     const existedUser = await User.findOne({ 
         $or :[{
             username,
@@ -87,6 +92,11 @@ const login = asyncHandler(async(req:Request,res:Response)=>{
         throw new ApiError(400,"email or username is required")
 
     }
+    const validEmail = emailSchema.safeParse(email)
+    const validPassword = password.safeParse(password)
+    const validUsername = username.safeParse(username)
+    if(!((validEmail||validUsername)&&validPassword))
+    throw new ApiError(400,"give proper inputs")
     const user = await User.findOne({
         $or : [{email},{username}]
     });
@@ -137,7 +147,10 @@ const editUser = asyncHandler(async(req:Request,res:Response)=>{
     const {username,fullName} = req.body;
     if(!(username||fullName))
     throw new ApiError(400,"username or password is required")
-
+    const vaildUsername  = usernameSchema.safeParse(username)
+    const validfullName = nameSchema.safeParse(fullName)
+    if(!(validfullName||vaildUsername))
+    throw new ApiError(400,"enter valid input")
     const user = await User.findByIdAndUpdate(
         req.user?._id,
         {
@@ -154,6 +167,12 @@ const editUser = asyncHandler(async(req:Request,res:Response)=>{
     });
     const changeCurrentPassword = asyncHandler(async (req:Request, res:Response) => {
       const { oldPassword, newPassword } = req.body;
+      if(!oldPassword||!newPassword)
+      throw new ApiError(400,"please give valid password")
+      const validOldPassword = passwordSchema.safeParse(oldPassword)
+      const validNewPassword = passwordSchema.safeParse(newPassword)
+      if(!(validNewPassword&&validOldPassword))
+      throw new ApiError(400,"enter valid password it must be of length more than equal to 6")
       const user = await User.findById(req.user?._id).select("-accessToken -refreshToken");
       if(!user)
       throw new ApiError(400,"user does not exist")
@@ -218,8 +237,11 @@ const editUser = asyncHandler(async(req:Request,res:Response)=>{
           {
               throw new ApiError(400,"provide values for email otp");
           }
-  
-  
+          const validEmail = emailSchema.safeParse(email)
+          const validOtp=otpSchema.safeParse(otp)
+
+          if(!(validEmail&&validOtp))
+          throw new ApiError(400,"please enter a valid otp or email")
           //ennsume otp record exists
           const matchedOTPRecord = await OTP.findOne({email});
           if(!matchedOTPRecord)

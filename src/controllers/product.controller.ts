@@ -4,6 +4,7 @@ import { ApiError } from "../util/ApiError";
 import { asyncHandler } from "../util/asyncHandler";
 import { uploadOnCloudinary } from "../util/cloudinary";
 import { ApiResponse } from "../util/ApiResponse";
+import { descriptionSchema, nameSchema } from "../util/zodSchema";
 
 
 const createProduct = asyncHandler(async(req:Request,res:Response)=>{
@@ -12,6 +13,10 @@ const createProduct = asyncHandler(async(req:Request,res:Response)=>{
     {
         throw new ApiError(400,"name and description are required")
     }
+    const validName = nameSchema.safeParse(name)
+    const validDescription=descriptionSchema.safeParse(description)
+    if(!(validName&&validDescription))
+    throw new ApiError(400,"please enter a valid name and/or description(max:500)")
     const productExists =await Product.findOne({name})
     if(productExists)
     throw new ApiError(400,"Product already exists")
