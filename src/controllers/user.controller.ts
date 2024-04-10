@@ -3,7 +3,7 @@ import { User } from "../models/User.model";
 import { ApiError } from "../util/ApiError";
 import { asyncHandler } from "../util/asyncHandler";
 import { generateAccessToken, generateRefreshToken } from "../util/generateTokens";
-import { Request } from "express";
+import { Request,Response } from "express";
 import bcrypt from "bcrypt"
 import jwt from "jsonwebtoken";
 import { mailOptionsType, sendOTP } from "../util/sendOTP";
@@ -34,7 +34,7 @@ const generateAccessAndRefreshToken = async (userId:mongoose.Types.ObjectId) => 
     }
   };
 
-const register = asyncHandler(async(req,res)=>{
+const register = asyncHandler(async(req:Request,res:Response)=>{
     const {email,username,password,fullName} = req.body();
     if (
         [email, username, password].some((feild) => feild?.trim() === "")
@@ -78,7 +78,7 @@ const register = asyncHandler(async(req,res)=>{
 
 })
 
-const login = asyncHandler(async(req,res)=>{
+const login = asyncHandler(async(req:Request,res:Response)=>{
     const {email,password,username}  =req.body();
     if(!(email||username))
     {
@@ -112,7 +112,7 @@ const login = asyncHandler(async(req,res)=>{
     .json(new ApiResponse(200,{accessToken,refreshToken},"user logged in successfully"))
 })
 
-const logout = asyncHandler(async(req:Request,res)=>{
+const logout = asyncHandler(async(req:Request,res:Response)=>{
     await User.findByIdAndUpdate(
         req.user?._id ,
         {
@@ -131,7 +131,7 @@ const logout = asyncHandler(async(req:Request,res)=>{
     .clearCookie("refreshToken")
     .json(new ApiResponse(200, {}, "user logged out"));
 })
-const editUser = asyncHandler(async(req:Request,res)=>{
+const editUser = asyncHandler(async(req:Request,res:Response)=>{
     const {username,fullName} = req.body();
     if(!(username||fullName))
     throw new ApiError(400,"username or password is required")
@@ -150,7 +150,7 @@ const editUser = asyncHandler(async(req:Request,res)=>{
         .status(200)
         .json(new ApiResponse(200, user ||{}, "Account details are updated"));
     });
-    const changeCurrentPassword = asyncHandler(async (req, res) => {
+    const changeCurrentPassword = asyncHandler(async (req:Request, res:Response) => {
       const { oldPassword, newPassword } = req.body;
       const user = await User.findById(req.user?._id).select("-accessToken -refreshToken");
       if(!user)
@@ -165,7 +165,7 @@ const editUser = asyncHandler(async(req:Request,res)=>{
         .status(200)
         .json(new ApiResponse(200, {}, "password changed successfully"));
     });
-    const refreshAccessToken= asyncHandler(async(req,res)=>{
+    const refreshAccessToken= asyncHandler(async(req:Request,res:Response)=>{
       try {
         const incomingRefreshToken =
           req.cookies.refreshToken || req.body.refreshToken;
@@ -209,7 +209,7 @@ const editUser = asyncHandler(async(req:Request,res)=>{
         throw new ApiError(401, error.message || "invalid token ");
       }
     })
-    const verifyOTP  = asyncHandler(async(req,res)=>{
+    const verifyOTP  = asyncHandler(async(req:Request,res:Response)=>{
       try {
           const {email,otp} =req.body();
           if(!(email&&otp))
@@ -259,5 +259,4 @@ editUser,
 changeCurrentPassword,
 refreshAccessToken,
 verifyOTP
-
 }
