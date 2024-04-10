@@ -18,7 +18,7 @@ export const sendOTP =async ({id,
 
         //send email
         const mailOptions = {
-            form : process.env.AUTH_EMAIL,
+            from : process.env.AUTH_EMAIL,
             to : email,
             subject : subject,
             html : `<p>${message}</p><p style = "color : tomato; font-size:25px;

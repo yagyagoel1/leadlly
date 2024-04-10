@@ -28,7 +28,7 @@ transporter.verify((error,success)=>{
 
 })
 export const sendEmail = async (mailOptions: {
-    form: string | undefined;
+    from: string | undefined;
     to: string;
     subject: string;
     html: string;

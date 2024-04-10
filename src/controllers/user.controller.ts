@@ -10,6 +10,7 @@ import { mailOptionsType, sendOTP } from "../util/sendOTP";
 import { OTP } from "../models/OTP.model";
 import { ApiResponse } from "../util/ApiResponse";
 import { emailSchema, nameSchema, otpSchema, passwordSchema, usernameSchema } from "../util/zodSchema";
+import { sendEmail } from "../util/sendEmail";
 const generateAccessAndRefreshToken = async (userId:mongoose.Types.ObjectId) => {
     try {
       const user= await User.findById(userId).select("-password");
@@ -117,6 +118,13 @@ const login = asyncHandler(async(req:Request,res:Response)=>{
         httpOnly :true,
         secure :true
     }
+    const mailOptions ={
+      from  : process.env.AUTH_EMAIL,
+      to  : user.email||"",
+      subject : "Login Detected",
+      html : `<p>Hey, We detected a login from your account</p>`
+    }
+    await sendEmail(mailOptions)
     return res
     .status(200)
     .cookie("accessToken",accessToken,options)
@@ -182,6 +190,13 @@ const editUser = asyncHandler(async(req:Request,res:Response)=>{
       throw new ApiError(400, "Invalid old password");
       user.password = newPassword;
       await user.save({ validateBeforeSave: false });
+      const mailOptions ={
+        from  : process.env.AUTH_EMAIL,
+        to  : user.email||"",
+        subject : "Password got changed",
+        html : `<p>Hey, Your password has been changed successfully</p>`
+      }
+      await sendEmail(mailOptions)
       return res
         .status(200)
         .json(new ApiResponse(200, {}, "password changed successfully"));
